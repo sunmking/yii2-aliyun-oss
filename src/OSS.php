@@ -1,150 +1,76 @@
 <?php
-/**
- * author     : forecho <caizhenghai@gmail.com>
- * createTime : 2016/3/16 18:56
- * description:
- */
-
 namespace mrk\aliyun;
 
 use Yii;
-use OSS\OssClient;
 use yii\base\Component;
 use yii\base\InvalidConfigException;
+use OSS\OssClient;
+use OSS\Core\OssException;
 
+/**
+ * Class OSS
+ * @package mrk\aliyun
+ * @author Mr King
+ */
 class OSS extends Component
 {
     /**
-     * @var string OSS AccessKeyID
+     * @var
      */
     public $accessKeyId;
 
     /**
-     * @var string OSS AccessKeySecret
+     * @var
      */
     public $accessKeySecret;
 
     /**
-     * @var string OSS bucket
+     * @var
      */
     public $bucket;
 
     /**
-     * @var string OSS内网地址, 如:oss-cn-hangzhou-internal.aliyuncs.com
+     * @var string 节点地址, 如:oss-cn-hangzhou.aliyuncs.com
      */
-    public $lanDomain;
+    public $endpoint;
 
     /**
-     * @var string OSS外网地址, 如:oss-cn-hangzhou.aliyuncs.com
+     * @var
      */
-    public $wanDomain;
+    private $_client;
 
     /**
-     * @var OssClient
+     * @throws InvalidConfigException
      */
-    private $_ossClient;
-
-    /**
-     * 从lanDomain和wanDomain中选取, 默认走外网
-     * @var string 最终操作域名
-     */
-    protected $baseUrl;
-
-    /**
-     * @var bool 是否私有空间, 默认公开空间
-     */
-    public $isPrivate = false;
-
-    /**
-     * @var bool 上传文件是否使用内网，免流量费
-     */
-    public $isInternal = false;
-
     public function init()
     {
         if ($this->accessKeyId === null) {
             throw new InvalidConfigException('The "accessKeyId" property must be set.');
-        } elseif ($this->accessKeySecret === null) {
+        }
+        if ($this->accessKeySecret === null) {
             throw new InvalidConfigException('The "accessKeySecret" property must be set.');
-        } elseif ($this->bucket === null) {
+        }
+        if ($this->bucket === null) {
             throw new InvalidConfigException('The "bucket" property must be set.');
-        } elseif ($this->lanDomain === null) {
-            throw new InvalidConfigException('The "lanDomain" property must be set.');
-        } elseif ($this->wanDomain === null) {
-            throw new InvalidConfigException('The "wanDomain" property must be set.');
         }
-
-        $this->baseUrl = $this->isInternal ? $this->lanDomain : $this->wanDomain;
-    }
-
-    /**
-     * @return \OSS\OssClient
-     */
-    public function getClient()
-    {
-        if ($this->_ossClient === null) {
-            $this->setClient(new OssClient($this->accessKeyId, $this->accessKeySecret, $this->baseUrl));
+        if ($this->endpoint === null) {
+            throw new InvalidConfigException('The "endpoint" property must be set.');
         }
-        return $this->_ossClient;
-    }
-
-    /**
-     * @param \OSS\OssClient $ossClient
-     */
-    public function setClient(OssClient $ossClient)
-    {
-        $this->_ossClient = $ossClient;
-    }
-
-    /**
-     * @param $path
-     * @return bool
-     */
-    public function has($path)
-    {
-        return $this->getClient()->doesObjectExist($this->bucket, $path);
-    }
-
-    /**
-     * @param $path
-     * @return array|bool
-     * @throws \OSS\Core\OssException
-     */
-    public function read($path)
-    {
-        if (!($resource = $this->readStream($path))) {
-            return false;
+        try {
+            $this->_client = new OssClient($this->accessKeyId, $this->accessKeySecret, $this->endpoint);
+        } catch (OssException $e) {
+            throw new InvalidConfigException($e->getMessage());
         }
-        $resource['contents'] = stream_get_contents($resource['stream']);
-        fclose($resource['stream']);
-        unset($resource['stream']);
-        return $resource;
-    }
-
-    /**
-     * @param $path
-     * @return array|bool
-     * @throws \OSS\Core\OssException
-     */
-    public function readStream($path)
-    {
-        $url = $this->getClient()->signUrl($this->bucket, $path, 3600);
-        $stream = fopen($url, 'r');
-        if (!$stream) {
-            return false;
-        }
-        return compact('stream', 'path');
     }
 
     /**
      * @param $object
-     * @param $filePath ## 要上传文件的绝对路径
-     * @return null
-     * @throws \OSS\Core\OssException
+     * @param $filePath
+     * @return mixed
      */
     public function upload($object, $filePath)
     {
-        return $this->getClient()->uploadFile($this->bucket, $object, $filePath);
+        return $this->_client->uploadFile($this->bucket, $object, $filePath);
     }
 
     /**
@@ -154,7 +80,7 @@ class OSS extends Component
      */
     public function delete($object)
     {
-        return $this->getClient()->deleteObject($this->bucket, $object) === null;
+        return $this->_client->deleteObject($this->bucket, $object) === null;
     }
 
     /**
@@ -165,31 +91,29 @@ class OSS extends Component
      */
     public function batchDelete(array $object)
     {
-        return $this->getClient()->deleteObjects($this->bucket, $object) === null;
+        return $this->_client->deleteObjects($this->bucket, $object) === null;
     }
 
     /**
-     * 创建文件夹
      * @param $dirName
-     * @return array|bool
+     * @return bool
      */
     public function createDir($dirName)
     {
-        $result = $this->getClient()->createObjectDir($this->bucket, rtrim($dirName, '/'));
+        $result = $this->_client->createObjectDir($this->bucket, rtrim($dirName, '/'));
         if ($result !== null) {
             return false;
         }
-        return ['path' => $dirName];
+        return true;
     }
 
     /**
      * @param array $options
      * @return array
-     * @throws \OSS\Core\OssException
      */
     public function getAllObject($options = [])
     {
-        $objectListing = $this->getClient()->listObjects($this->bucket, $options);
+        $objectListing = $this->_client->listObjects($this->bucket, $options);
         $objectKeys = [];
         foreach ($objectListing->getObjectList() as $objectSummary) {
             $objectKeys[] = $objectSummary->getKey();
@@ -203,6 +127,6 @@ class OSS extends Component
      * @throws \OSS\Core\OssException
      */
     public function getAllBucket($options = null){
-        return $this->getClient()->listBuckets($options);
+        return $this->_client->listBuckets($options);
     }
 }
