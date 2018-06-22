@@ -28,3 +28,9 @@ components => [
     ],
 ]
 ```
+
+> 在 controller 中
+
+```php
+ \Yii::$app->oss->upload($object,$file);
+```
