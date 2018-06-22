@@ -122,6 +122,31 @@ class OSS extends Component
     }
 
     /**
+     * 创建bucket
+     * @param string $bucket
+     * @return bool
+     */
+    public function createBucket($bucket=''){
+        if(!$bucket){
+            return false;
+        }
+        return $this->_client->createBucket($bucket);
+    }
+
+    /**
+     * 删除bucket
+     * @param string $bucket
+     * @return bool
+     */
+    public function deleteBucket($bucket=''){
+        $is_true = $this->_client->doesBucketExist($bucket);
+        if(!$is_true){
+            return false;
+        }
+        return $this->_client->deleteBucket($bucket);
+    }
+
+    /**
      * @param null $options
      * @return \OSS\Model\BucketListInfo
      * @throws \OSS\Core\OssException
