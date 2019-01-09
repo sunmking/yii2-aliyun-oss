@@ -1,5 +1,5 @@
 <?php
-namespace mrk\aliyun;
+namespace Saviorlv\Aliyun;
 
 use Yii;
 use yii\base\Component;
@@ -9,8 +9,8 @@ use OSS\Core\OssException;
 
 /**
  * Class OSS
- * @package mrk\aliyun
- * @author Mr King
+ * @package Saviorlv\Aliyun
+ * @author saviorlv
  */
 class OSS extends Component
 {
