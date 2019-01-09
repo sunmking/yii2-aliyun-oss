@@ -1,12 +1,12 @@
 {
-    "name": "mrk/yii2-aliyun-oss",
+    "name": "saviorlv/yii2-aliyun-oss",
     "description": "Yii2 阿里云 OSS",
     "type": "yii2-extension",
     "keywords": ["yii2","extension","AliyunOSS","OSS"],
     "license": "MIT",
     "authors": [
         {
-            "name": "Mr King",
+            "name": "saviorlv",
             "email": "1042080686@qq.com"
         }
     ],
@@ -16,7 +16,7 @@
     },
     "autoload": {
         "psr-4": {
-            "mrk\\aliyun\\": "src/"
+            "Saviorlv\\Aliyun\\": "src/"
         }
     }
 }
