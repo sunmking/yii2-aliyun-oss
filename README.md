@@ -3,13 +3,13 @@
 安装
 
 ```
-composer require mrk/yii2-aliyun-oss:@dev
+composer require saviorlv/yii2-aliyun-oss -vvv
 ```
 
 or add
 
 ```
-"mrk/yii2-aliyun-oss":"@dev"
+"saviorlv/yii2-aliyun-oss":"^1.0"
 ```
 
 
@@ -20,7 +20,7 @@ or add
 ```php
 components => [
     'oss' => [
-        'class' => 'mrk\aliyun\OSS',
+        'class' => 'Saviorlv\Aliyun\OSS',
         'accessKeyId' => 'xxxxx', // 阿里云AccessKeyID
         'accessKeySecret' => 'xxxx', // 阿里云 AccessKeySecret
         'bucket' => 'xxx', // bucket
